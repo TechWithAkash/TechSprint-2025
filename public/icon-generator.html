@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Generator - WealthWise</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .icon-item {
+            text-align: center;
+        }
+
+        canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        canvas:hover {
+            transform: scale(1.05);
+            border-color: #10b981;
+        }
+
+        .size-label {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .info h3 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info p {
+            color: #1e3a8a;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .success {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+            display: none;
+        }
+
+        .success h3 {
+            color: #065f46;
+        }
+
+        .success p {
+            color: #064e3b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 PWA Icon Generator</h1>
+        <p class="subtitle">Generate icons for WealthWise Progressive Web App</p>
+
+        <div class="grid" id="iconGrid"></div>
+
+        <div class="buttons">
+            <button onclick="downloadAll()">📥 Download All Icons</button>
+            <button onclick="regenerateIcons()">🔄 Regenerate Icons</button>
+        </div>
+
+        <div class="info">
+            <h3>📋 Instructions:</h3>
+            <p>
+                1. Click "Download All Icons" to save all PWA icons<br>
+                2. Extract the downloaded files<br>
+                3. Place them in <code>public/icons/</code> folder<br>
+                4. Rebuild your app with <code>npm run build</code>
+            </p>
+        </div>
+
+        <div class="info success" id="successMessage">
+            <h3>✅ Success!</h3>
+            <p>Icons downloaded successfully! Place them in your <code>public/icons/</code> folder.</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const canvases = {};
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#10b981');
+            gradient.addColorStop(1, '#14b8a6');
+
+            // Draw rounded rectangle background
+            const radius = size * 0.215; // 21.5% radius for rounded corners
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw 'W' letter
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.55}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('W', size / 2, size / 2 + size * 0.02);
+
+            // Add decorative circles
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(size * 0.82, size * 0.23, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(size * 0.74, size * 0.20, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+
+            return canvas;
+        }
+
+        function displayIcons() {
+            const grid = document.getElementById('iconGrid');
+            grid.innerHTML = '';
+
+            sizes.forEach(size => {
+                const canvas = createIcon(size);
+                canvases[size] = canvas;
+
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+
+                const displayCanvas = canvas.cloneNode();
+                displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                displayCanvas.onclick = () => downloadSingle(size);
+                displayCanvas.title = `Click to download ${size}x${size}`;
+
+                const label = document.createElement('div');
+                label.className = 'size-label';
+                label.textContent = `${size}×${size}`;
+
+                item.appendChild(displayCanvas);
+                item.appendChild(label);
+                grid.appendChild(item);
+            });
+        }
+
+        function downloadSingle(size) {
+            const canvas = canvases[size];
+            canvas.toBlob(blob => {
+                saveAs(blob, `icon-${size}x${size}.png`);
+            });
+        }
+
+        async function downloadAll() {
+            const zip = new JSZip();
+            const folder = zip.folder('icons');
+
+            for (const size of sizes) {
+                const canvas = canvases[size];
+                const blob = await new Promise(resolve => canvas.toBlob(resolve));
+                folder.file(`icon-${size}x${size}.png`, blob);
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, 'wealthwise-pwa-icons.zip');
+
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('successMessage').style.display = 'none';
+            }, 5000);
+        }
+
+        function regenerateIcons() {
+            displayIcons();
+        }
+
+        // Initialize
+        displayIcons();
+    </script>
+</body>
+
+</html>

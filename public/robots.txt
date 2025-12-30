@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /auth/signin
+Allow: /auth/signup
+Allow: /privacy-policy
+
+# Disallow private dashboard pages from indexing
+Disallow: /dashboard/*
+Disallow: /api/*
+Disallow: /onboarding/*
+
+# Sitemap
+Sitemap: https://www.mywealthwise.tech/sitemap.xml
