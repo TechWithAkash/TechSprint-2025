@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-15.5-black?logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19.1-blue?logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/Firebase-Firestore-orange?logo=firebase" alt="Firebase" />
+  <img src="https://img.shields.io/badge/MongoDB-Atlas-green?logo=mongodb" alt="MongoDB" />
   <img src="https://img.shields.io/badge/Gemini_AI-Powered-4285F4?logo=google" alt="Gemini AI" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
@@ -88,9 +88,10 @@ i18next           → Internationalization
 ### Backend
 ```
 Next.js API Routes → Serverless API endpoints
-Firebase Firestore → NoSQL cloud database
-Firebase Auth      → Authentication service
-NextAuth.js v5     → Session management
+MongoDB Atlas      → Cloud NoSQL database
+Mongoose ODM       → MongoDB object modeling
+NextAuth.js v5     → Authentication & sessions
+Redis              → Caching layer (optional)
 ```
 
 ### AI & Services
@@ -110,7 +111,7 @@ Gmail SMTP         → Email notifications
 
 - **Node.js** 18.17 or higher
 - **npm** 9+ or **yarn** 1.22+
-- **Firebase Project** with Firestore enabled
+- **MongoDB Atlas** account (free tier works)
 - **Google Cloud Console** account for APIs
 
 ### Installation
@@ -136,12 +137,12 @@ cp .env.example .env.local
 
 Edit `.env.local` with your credentials (see [Environment Variables](#environment-variables) section).
 
-**4. Initialize Firebase**
+**4. Set up MongoDB Atlas**
 
-- Create a project at [Firebase Console](https://console.firebase.google.com/)
-- Enable **Firestore Database** in production mode
-- Enable **Authentication** with Email/Password and Google providers
-- Download your service account key
+- Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/atlas)
+- Create a database user with read/write permissions
+- Whitelist your IP address (or allow all: `0.0.0.0/0`)
+- Get your connection string and add to `.env.local`
 
 **5. Run the development server**
 
@@ -163,8 +164,7 @@ Create a `.env.local` file in the root directory. See `.env.example` for all req
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_FIREBASE_*` | Firebase client configuration |
-| `FIREBASE_SERVICE_ACCOUNT_*` | Firebase Admin SDK credentials |
+| `MONGODB_URI` | MongoDB Atlas connection string |
 | `NEXTAUTH_SECRET` | Random string for session encryption |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID |
 | `GEMINI_API_KEY` | Google Gemini AI API key |
@@ -211,9 +211,9 @@ wealthwise/
 │   ├── retentionEngine.js    # Achievement system
 │   ├── notificationService.js # Alert management
 │   ├── seasonalPlanner.js    # Festival planning
-│   └── firebase.js           # Firebase configuration
+│   └── dbConnect.js          # MongoDB connection
 │
-├── models/               # Data models (Firestore schemas)
+├── models/               # Mongoose schemas
 │   ├── User.js          # User account model
 │   ├── UserProfile.js   # Profile & preferences
 │   ├── Transaction.js   # Expense/income records
@@ -329,44 +329,53 @@ npm run lint         # Run ESLint
 
 ---
 
-## Firebase Data Structure
+## MongoDB Data Structure
 
 ### Collections
 
 ```
-firestore/
-├── users/                 # User accounts
-│   └── {userId}/
-│       ├── email
-│       ├── name
-│       ├── preferences
-│       └── onboarding
+mongodb/
+├── users                  # User accounts
+│   └── {
+│       _id: ObjectId,
+│       email: String,
+│       name: String,
+│       password: String (hashed),
+│       preferences: Object,
+│       onboarding: Object
+│   }
 │
-├── profiles/              # User financial profiles
-│   └── {profileId}/
-│       ├── userId
-│       ├── monthlyIncome
-│       ├── incomeSources[]
-│       ├── demographics
-│       ├── generatedBudget
-│       ├── seasonalEvents[]
-│       └── achievements[]
+├── userprofiles           # User financial profiles
+│   └── {
+│       _id: ObjectId,
+│       userId: ObjectId (ref: users),
+│       monthlyIncome: Number,
+│       incomeSources: Array,
+│       demographics: Object,
+│       generatedBudget: Object,
+│       seasonalEvents: Array,
+│       achievements: Array
+│   }
 │
-├── transactions/          # Expenses & income
-│   └── {transactionId}/
-│       ├── userId
-│       ├── amount
-│       ├── category
-│       ├── date
-│       └── source (manual/voice/import)
+├── transactions           # Expenses & income
+│   └── {
+│       _id: ObjectId,
+│       userId: ObjectId (ref: users),
+│       amount: Number,
+│       category: String,
+│       date: Date,
+│       source: String (manual/voice/import)
+│   }
 │
-└── debts/                 # Debt records
-    └── {debtId}/
-        ├── userId
-        ├── type (taken/given)
-        ├── amount
-        ├── interestRate
-        └── payments[]
+└── debts                  # Debt records
+    └── {
+        _id: ObjectId,
+        userId: ObjectId (ref: users),
+        type: String (taken/given),
+        amount: Number,
+        interestRate: Number,
+        payments: Array
+    }
 ```
 
 ---
@@ -398,7 +407,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- **Google** for Gemini AI, Firebase, and Cloud APIs
+- **Google** for Gemini AI and Cloud APIs
+- **MongoDB** for Atlas cloud database
 - **Vercel** for Next.js and hosting platform
 - **Radix UI** for accessible component primitives
 - **TechSprint** hackathon for the opportunity
